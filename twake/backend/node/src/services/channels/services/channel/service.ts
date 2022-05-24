@@ -413,6 +413,17 @@ export class ChannelServiceImpl implements ChannelService {
     return result;
   }
 
+  public async fillChannelActivities(channels: Channel[]): Promise<ChannelObject[]> {
+    const filledChannels: ChannelObject[] = [];
+    for (const channel of channels) {
+      const activity = await this.getChannelActivity(channel);
+      const chObj = ChannelObject.mapTo(channel);
+      chObj.last_activity = activity;
+      filledChannels.push(chObj);
+    }
+    return filledChannels;
+  }
+
   async list(
     pagination: Pagination,
     options: ChannelListOptions,
@@ -640,7 +651,7 @@ export class ChannelServiceImpl implements ChannelService {
 
   public async includeUsersInDirectChannel(
     channel: Channel,
-    context?: WorkspaceExecutionContext,
+    excludeUserId?: string,
   ): Promise<UsersIncludedChannel> {
     const channelWithUsers: UsersIncludedChannel = { users: [], ...channel };
     if (isDirectChannel(channel)) {
@@ -653,7 +664,7 @@ export class ChannelServiceImpl implements ChannelService {
       }
       channelWithUsers.users = users;
       channelWithUsers.name = users
-        .filter(u => u.id != context?.user?.id)
+        .filter(u => u.id != excludeUserId)
         .map(u => u.full_name)
         .join(", ");
     }
